@@ -2,46 +2,40 @@ from app.db_connector import execute_query
 from app.models.pedido_item import PedidoItem
 
 class Pedido:
-    def __init__(self, id=None, cliente_id=None, fecha=None,
-                 total=0.0, estado="Pendiente"):
+    def __init__(self, id=None, cliente_id=None, fecha=None, total=0.0, estado="Pendiente"):
         self.id = id
         self.cliente_id = cliente_id
         self.fecha = fecha
         self.total = total
         self.estado = estado
-        self.items = []
 
     # --- CREATE BASE ---
     @staticmethod
     def crear_pedido(cliente_id):
         q = "INSERT INTO pedidos (cliente_id) VALUES (%s)"
         execute_query(q, (cliente_id,), commit=True)
-        res = execute_query("SELECT LAST_INSERT_ID() as id")
+        res = execute_query("SELECT LAST_INSERT_ID() AS id")
         return res[0]["id"]
 
     # --- CREATE FROM CART ---
     @staticmethod
     def crear_desde_carrito(cliente_id, items):
-        """
-        items = lista de productos:
-        [
-            {'id':1, 'precio':40},
-            {'id':3, 'precio':20},
-            ...
-        ]
-        """
         id_pedido = Pedido.crear_pedido(cliente_id)
 
         total = 0
 
         for p in items:
+            cantidad = p.get("cantidad", 1)
+            precio = float(p["precio"])
+
             item = PedidoItem(
                 pedido_id=id_pedido,
                 producto_id=p["id"],
-                cantidad=p.get("cantidad", 1),
-                precio_unit=p["precio"]
+                cantidad=cantidad,
+                precio_unit=precio
             )
-            total += float(p["precio"]) * item.cantidad
+
+            total += precio * cantidad
             item.crear()
 
         Pedido.actualizar_total(id_pedido, total)
@@ -69,8 +63,7 @@ class Pedido:
 
     @staticmethod
     def listar_todos():
-        q = "SELECT * FROM pedidos"
-        return execute_query(q)
+        return execute_query("SELECT * FROM pedidos")
 
     # --- DELETE ---
     @staticmethod

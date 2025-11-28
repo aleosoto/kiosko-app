@@ -29,8 +29,7 @@ class Cliente:
 
     @staticmethod
     def listar_todos():
-        q = "SELECT * FROM clientes"
-        return execute_query(q)
+        return execute_query("SELECT * FROM clientes")
 
     # --- UPDATE ---
     @staticmethod
