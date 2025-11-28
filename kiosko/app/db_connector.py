@@ -1,29 +1,26 @@
-# app/db_connector.py
-
 import mysql.connector
 from mysql.connector import Error
-from app.config import config
+from app.config import DB_CONFIG
 
 def get_connection():
     try:
         conn = mysql.connector.connect(
-            host=config["host"],
-            user=config["user"],
-            password=config["password"],
-            database=config["database"],
-            port=config["port"]
+            host=DB_CONFIG["host"],
+            user=DB_CONFIG["user"],
+            password=DB_CONFIG["password"],
+            database=DB_CONFIG["database"],
+            port=DB_CONFIG["port"]
         )
         return conn
     except Error as e:
-        print(" ERROR DE CONEXIÓN:", e)
+        print("ERROR DE CONEXIÓN:", e)
         return None
 
-
-def execute_query(query, params=None, commit=False):
+def execute_query(query, params=None, commit=False, return_id=False):
     conn = get_connection()
     if conn is None:
-        print(" No se pudo conectar a la base de datos.")
-        return []
+        print("No se pudo conectar a la base de datos.")
+        return None if return_id else []
 
     try:
         cursor = conn.cursor(dictionary=True)
@@ -32,18 +29,20 @@ def execute_query(query, params=None, commit=False):
         if commit:
             conn.commit()
 
+        # devolver ID correcto
+        if return_id:
+            return cursor.lastrowid
+
+        # devolver SELECT
         if query.strip().upper().startswith("SELECT"):
             return cursor.fetchall()
 
         return []
 
     except Error as e:
-        print(" DB Error:", e)
-        return []
+        print("DB Error:", e)
+        return None if return_id else []
 
     finally:
-        try:
-            cursor.close()
-            conn.close()
-        except:
-            pass
+        cursor.close()
+        conn.close()
