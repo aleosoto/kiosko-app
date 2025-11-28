@@ -10,11 +10,12 @@ class Cliente:
     # --- CREATE ---
     def crear(self):
         q = """
-        INSERT INTO clientes (nombre, telefono)
-        VALUES (%s, %s)
+            INSERT INTO clientes (nombre, telefono)
+            VALUES (%s, %s)
         """
         execute_query(q, (self.nombre, self.telefono), commit=True)
 
+        # obtener el ID recién insertado
         res = execute_query("SELECT LAST_INSERT_ID() AS id")
         self.id = res[0]["id"]
         return self.id
