@@ -43,6 +43,10 @@ class KioscoGUI:
         view_btn = tk.Button(btn_frame, text="Ver pedidos", command=self.ver_pedidos)
         view_btn.grid(row=0, column=2, padx=4)
 
+        tk.Label(right, text="Nombre del cliente:", font=('Arial', 10)).pack(pady=2)
+        self.entry_nombre = tk.Entry(right, width=30)
+        self.entry_nombre.pack(pady=2)
+
         tk.Label(right, text="Carrito", font=('Arial', 12)).pack(pady=5)
         self.txt_carrito = tk.Text(right, height=20, width=40)
         self.txt_carrito.pack(padx=6)
@@ -58,7 +62,6 @@ class KioscoGUI:
         if not prod:
             messagebox.showerror("Error", "Producto no encontrado")
             return
-        # default cantidad 1
         item = {'id': prod['id'], 'nombre': prod['nombre'], 'precio': float(prod['precio']), 'cantidad': 1}
         self.carrito.append(item)
         self.refresh_carrito()
@@ -68,7 +71,6 @@ class KioscoGUI:
         if not sel:
             messagebox.showwarning("Atención", "Selecciona un producto")
             return
-        # remove first matching in carrito with same id
         pid = int(sel)
         for i, it in enumerate(self.carrito):
             if it['id'] == pid:
@@ -80,7 +82,7 @@ class KioscoGUI:
         self.txt_carrito.delete('1.0', tk.END)
         total = 0
         for p in self.carrito:
-            line = f"{p['nombre']} x{p.get('cantidad',1)} - ${p['precio']*p.get('cantidad',1):.2f}\n"
+            line = f"{p['nombre']} x{p.get('cantidad',1)} - ${p['precio'] * p.get('cantidad',1):.2f}\n"
             self.txt_carrito.insert(tk.END, line)
             total += p['precio'] * p.get('cantidad',1)
         self.txt_carrito.insert(tk.END, f"\nTotal: ${total:.2f}")
@@ -93,33 +95,49 @@ class KioscoGUI:
         if not self.carrito:
             messagebox.showwarning("Atención", "Carrito vacío")
             return
-        # crear cliente anónimo y pedido
-        cliente = Cliente(nombre="Anonimo")
-        cliente.crear()
-        try:
-            # preparar items para crear_desde_carrito (expects list of dicts with id, precio)
-            items = [{'id': it['id'], 'precio': it['price'] if 'price' in it else it['price'] if 'price' in it else it['precio']} for it in self.carrito]
-        except Exception:
-            items = [{'id': it['id'], 'precio': it['precio']} for it in self.carrito]
-        pedido = Pedido.crear_desde_carrito(None, items)
+
+        # Obtener nombre del cliente
+        nombre_cliente = self.entry_nombre.get().strip()
+        if not nombre_cliente:
+            nombre_cliente = "Cliente"
+
+        # Crear cliente con el nombre
+        cliente = Cliente(nombre=nombre_cliente)
+        cliente_id = cliente.crear()
+
+        # Preparar items correctamente
+        items = [{'id': it['id'], 'precio': it.get('precio', 0)} for it in self.carrito]
+
+        # Crear pedido con cliente real
+        pedido = Pedido.crear_desde_carrito(cliente_id, items)
+
+        # Registrar el pago
         Pago.procesar_pago_simple(pedido['id'], pedido['total'])
-        messagebox.showinfo("Listo", f"Pedido {pedido['id']} creado y pago procesado. Total: ${pedido['total']:.2f}")
+
+        messagebox.showinfo(
+            "Listo",
+            f"Pedido {pedido['id']} creado a nombre de {nombre_cliente}\n"
+            f"Total: ${pedido['total']:.2f}"
+        )
+
         self.carrito = []
+        self.entry_nombre.delete(0, tk.END)
         self.refresh_carrito()
 
     def ver_pedidos(self):
         top = tk.Toplevel(self.root)
         top.title("Pedidos")
-        cols = ("id","cliente_id","fecha","total","estado")
+        cols = ("id", "cliente_id", "fecha", "total", "estado")
         tree = ttk.Treeview(top, columns=cols, show='headings')
         for c in cols:
             tree.heading(c, text=c.capitalize())
         tree.pack(fill='both', expand=True)
-        from app.models.pedido import Pedido
+
         try:
             rows = Pedido.listar_todos()
         except Exception as e:
             messagebox.showerror("Error", "No se pudo obtener pedidos")
             rows = []
+
         for r in rows:
             tree.insert('', 'end', values=(r['id'], r['cliente_id'], str(r['fecha']), float(r['total']), r['estado']))

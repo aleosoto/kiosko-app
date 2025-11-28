@@ -15,6 +15,10 @@ class Cliente:
         """
         execute_query(q, (self.nombre, self.telefono), commit=True)
 
+        res = execute_query("SELECT LAST_INSERT_ID() AS id")
+        self.id = res[0]["id"]
+        return self.id
+
     # --- READ ---
     @staticmethod
     def obtener_por_id(cliente_id):
