@@ -1,4 +1,3 @@
-# app/models/pedido.py
 from app.db_connector import execute_query
 from app.models.pedido_item import PedidoItem
 
@@ -39,10 +38,10 @@ class Pedido:
             item = PedidoItem(
                 pedido_id=id_pedido,
                 producto_id=p["id"],
-                cantidad=1,
+                cantidad=p.get("cantidad", 1),
                 precio_unit=p["precio"]
             )
-            total += float(p["precio"])
+            total += float(p["precio"]) * item.cantidad
             item.crear()
 
         Pedido.actualizar_total(id_pedido, total)

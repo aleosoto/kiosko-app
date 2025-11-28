@@ -1,4 +1,3 @@
-# app/models/pedido_item.py
 from app.db_connector import execute_query
 
 class PedidoItem:

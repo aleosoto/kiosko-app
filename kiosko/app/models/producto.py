@@ -1,4 +1,3 @@
-# app/models/producto.py
 from app.db_connector import execute_query
 
 class Producto:

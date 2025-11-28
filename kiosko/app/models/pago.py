@@ -1,4 +1,3 @@
-# app/models/pago.py
 from app.db_connector import execute_query
 
 class Pago:
@@ -20,7 +19,7 @@ class Pago:
         """
         execute_query(q, (pedido_id, monto, metodo), commit=True)
 
-        # actualizar pedido como listo para preparación
+        # actualizar pedido como en preparación
         from app.models.pedido import Pedido
         Pedido.cambiar_estado(pedido_id, "En preparación")
 

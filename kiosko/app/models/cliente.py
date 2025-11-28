@@ -1,4 +1,3 @@
-# app/models/cliente.py
 from app.db_connector import execute_query
 
 class Cliente:
