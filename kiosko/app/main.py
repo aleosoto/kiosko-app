@@ -1,4 +1,3 @@
-# app/main.py
 import tkinter as tk
 from app.gui import KioscoGUI
 
