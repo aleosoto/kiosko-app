@@ -1,27 +1,49 @@
+# app/db_connector.py
+
 import mysql.connector
 from mysql.connector import Error
-from app.config import DB_CONFIG
+from app.config import config
 
 def get_connection():
-    return mysql.connector.connect(**DB_CONFIG)
+    try:
+        conn = mysql.connector.connect(
+            host=config["host"],
+            user=config["user"],
+            password=config["password"],
+            database=config["database"],
+            port=config["port"]
+        )
+        return conn
+    except Error as e:
+        print(" ERROR DE CONEXIÓN:", e)
+        return None
+
 
 def execute_query(query, params=None, commit=False):
-    conn = None
+    conn = get_connection()
+    if conn is None:
+        print(" No se pudo conectar a la base de datos.")
+        return []
+
     try:
-        conn = get_connection()
-        cur = conn.cursor(dictionary=True)
-        cur.execute(query, params or ())
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query, params or ())
+
         if commit:
             conn.commit()
-        try:
-            return cur.fetchall()
-        except:
-            return []
-    except Exception as e:
-        # simple logging to console; replace with logging if needed
-        print('DB Error:', e)
-        raise
+
+        if query.strip().upper().startswith("SELECT"):
+            return cursor.fetchall()
+
+        return []
+
+    except Error as e:
+        print(" DB Error:", e)
+        return []
+
     finally:
-        if conn:
-            cur.close()
+        try:
+            cursor.close()
             conn.close()
+        except:
+            pass
